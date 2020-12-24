@@ -1,4 +1,4 @@
-package com.github.megatronking.stringfog;
+package com.geetest.stringguard;
 
 import org.junit.Test;
 

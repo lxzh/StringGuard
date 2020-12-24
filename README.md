@@ -1,5 +1,5 @@
 
-# StringFog
+# StringGuard
 一款自动对dex/aar/jar文件中的字符串进行加密Android插件工具，正如名字所言，给字符串加上一层雾霭，使人难以窥视其真面目。
 
 - 支持app打包生成的apk加密。
@@ -11,7 +11,7 @@
 
 ### 原理
 
-![](https://github.com/MegatronKing/StringFog/blob/master/assets/flow.png)<br>
+![](https://github.com/MegatronKing/StringGuard/blob/master/assets/flow.png)<br>
 
 - 加密前：
 ```
@@ -20,7 +20,7 @@ String a = "This is a string!";
 
 - 加密后：
 ```
-String a = StringFog.decrypt("ABCDEFGHIJKLMN");
+String a = StringGuard.decrypt("ABCDEFGHIJKLMN");
 ```
 
 - 运行时：
@@ -29,7 +29,7 @@ decrypt: "ABCDEFGHIJKLMN" => "This is a string!"
 ```
 
 ### 混淆
-StringFog和混淆完全不冲突，也不需要配置反混淆，实际上StringFog配上混淆效果会更好！
+StringGuard和混淆完全不冲突，也不需要配置反混淆，实际上StringGuard配上混淆效果会更好！
 
 ### 使用
 由于开发了gradle插件，所以在集成时非常简单，不会影响到打包的配置。插件已经上传到jcenter，直接引用依赖就可以。
@@ -42,24 +42,24 @@ buildscript {
     }
     dependencies {
         ...
-        classpath 'com.github.megatronking.stringfog:gradle-plugin:2.2.1'
+        classpath 'com.geetest.stringguard:gradle-plugin:2.2.1'
         // 选用加解密算法库，默认实现了xor和aes-cbc两种简单算法，也可以使用自己的加解密库。
-        classpath 'com.github.megatronking.stringfog:xor:1.1.0'
+        classpath 'com.geetest.stringguard:xor:1.1.0'
     }
 }
 ```
 
 ##### 2、在app或lib的build.gradle中配置插件。
 ```
-apply plugin: 'stringfog'
+apply plugin: 'stringguard'
 
-stringfog {
+stringguard {
     // 这是加解密key，可以自由定义。
     key 'Hello World'
     // 开关
     enable true
     // 加解密库的实现类路径，需和上面配置的加解密算法库一致。
-    implementation 'com.github.megatronking.stringfog.xor.StringFogImpl'
+    implementation 'com.geetest.stringguard.xor.StringGuardImpl'
     // 指定需加密的代码包路径，可配置多个，未指定将默认全部加密。
     fogPackages = ['com.xxx.xxx']
 }
@@ -70,24 +70,24 @@ stringfog {
 dependencies {
       ...
       // 这里要和上面选用的加解密算法库一致，用于运行时解密。
-      compile 'com.github.megatronking.stringfog:xor:1.1.0'
+      compile 'com.geetest.stringguard:xor:1.1.0'
 }
 ```
 
 ### 扩展
 
 #### 注解反加密
-如果开发者有不需要自动加密的类，可以使用注解StringFogIgnore来忽略：
+如果开发者有不需要自动加密的类，可以使用注解StringGuardIgnore来忽略：
 ```
-@StringFogIgnore
+@StringGuardIgnore
 public class Test {
     ...
 }
 ```
 #### 自定义加解密算法实现
-实现IStringFog接口，参考stringfog-ext目录下面的两种算法实现。注意某些算法在不同平台上会有差异，可能出现在运行时无法正确解密的问题。如何集成请参考下方范例！
+实现IStringGuard接口，参考stringguard-ext目录下面的两种算法实现。注意某些算法在不同平台上会有差异，可能出现在运行时无法正确解密的问题。如何集成请参考下方范例！
 ```
-public final class StringFogImpl implements IStringFog {
+public final class StringGuardImpl implements IStringGuard {
 
     @Override
     public String encrypt(String data, String key) {
@@ -110,11 +110,11 @@ public final class StringFogImpl implements IStringFog {
 ```
 
 #### Mapping文件
-加解密的字符串明文和暗文会自动生成mapping映射文件，位于outputs/mapping/stringfog.txt。
+加解密的字符串明文和暗文会自动生成mapping映射文件，位于outputs/mapping/stringguard.txt。
 
 ## 范例
-- 默认加解密算法集成，参考[sample1](https://github.com/MegatronKing/StringFog-Sample1)
-- 自定义加解密算法集成，参考[sample2](https://github.com/MegatronKing/StringFog-Sample2)
+- 默认加解密算法集成，参考[sample1](https://github.com/MegatronKing/StringGuard-Sample1)
+- 自定义加解密算法集成，参考[sample2](https://github.com/MegatronKing/StringGuard-Sample2)
 
 ## 更新日志
 
@@ -152,7 +152,7 @@ public final class StringFogImpl implements IStringFog {
 ### v1.2.1
 - 修复windows下文件分隔符的bug
 - 修复applicationId和packageName不一致导致无法编译的bug
-- 优化功能，不需要再手动exclude已使用StringFog的库
+- 优化功能，不需要再手动exclude已使用StringGuard的库
 
 ### v1.2.0
 - 支持在library中使用，每个library可以使用不同key

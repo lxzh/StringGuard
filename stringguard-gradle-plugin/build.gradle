@@ -1,0 +1,82 @@
+apply plugin: 'java-library'
+apply plugin: 'groovy'
+apply plugin: 'maven'
+
+dependencies {
+    implementation gradleApi()
+    implementation localGroovy()
+    implementation 'com.android.tools.build:gradle:3.3.0'
+    implementation 'org.ow2.asm:asm-all:5.0.4'
+    implementation 'com.squareup:javapoet:1.9.0'
+    api project(':stringguard-interface')
+}
+
+sourceSets {
+    main {
+        groovy {
+            srcDir 'src/main/groovy'
+        }
+        java {
+            srcDir 'src/main/java'
+        }
+
+        resources {
+            srcDir 'src/main/resources'
+        }
+    }
+}
+
+//生成主jar包
+jar {
+    sourceSets {
+        main {
+            groovy.srcDirs = ['src/main/groovy']
+            java.srcDirs = ['src/main/java']
+        }
+    }
+    manifest {
+        attributes 'Main-Class': 'com.geetest.MyPlugin'
+    }
+}
+
+//生成源码jar包
+task sourcesJar(type: Jar) {
+    from project.file('src/main/test')
+    classifier = 'sources'
+}
+
+group=GROUP
+archivesBaseName=ARTIFACTID
+version=VERSION
+
+[compileJava, compileGroovy, javadoc]*.options*.encoding = 'UTF-8'
+
+artifacts {
+    archives sourcesJar
+}
+
+repositories {
+    jcenter()
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: uri('../repo')) //deploy到本地仓库
+            pom.groupId = GROUP
+            pom.artifactId = ARTIFACTID
+            pom.version = VERSION
+        }
+    }
+}
+
+//uploadArchives {
+//    repositories {
+//        mavenDeployer {
+//            repository(url: uri('../maven'))
+//        }
+//    }
+//}
+
+//apply from: '../bintray_java.gradle'
+//apply from: '../nexus_java.gradle'

@@ -1,0 +1,9 @@
+repositories {
+    maven{ url rootProject.file("../repo") }
+}
+
+dependencies {
+    // 自定义算法实现依赖库
+//    implementation 'com.geetest.android:stringguard-interface:1.0.0'
+    implementation 'com.geetest.android:stringguard-interface:1.0.0'
+}
