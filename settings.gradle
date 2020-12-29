@@ -1,6 +1,1 @@
-include ':app', ':stringguard-gradle-plugin', ':stringguard-interface'
-file('stringguard-ext').listFiles().each {
-    if (it.isDirectory()) {
-        include ":stringguard-ext:${it.name}"
-    }
-}
+include ':app', ':stringguard-gradle-plugin', ':stringguard-interface', ':stringguard-impl'

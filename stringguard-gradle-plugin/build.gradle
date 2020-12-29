@@ -1,6 +1,8 @@
 apply plugin: 'java-library'
 apply plugin: 'groovy'
 apply plugin: 'maven'
+//上传 jcenter 中央仓库
+apply from: './upload.gradle'
 
 dependencies {
     implementation gradleApi()
@@ -39,25 +41,11 @@ jar {
     }
 }
 
-//生成源码jar包
-task sourcesJar(type: Jar) {
-    from project.file('src/main/test')
-    classifier = 'sources'
-}
-
 group=GROUP
 archivesBaseName=ARTIFACTID
 version=VERSION
 
 [compileJava, compileGroovy, javadoc]*.options*.encoding = 'UTF-8'
-
-artifacts {
-    archives sourcesJar
-}
-
-repositories {
-    jcenter()
-}
 
 uploadArchives {
     repositories {
@@ -69,14 +57,3 @@ uploadArchives {
         }
     }
 }
-
-//uploadArchives {
-//    repositories {
-//        mavenDeployer {
-//            repository(url: uri('../maven'))
-//        }
-//    }
-//}
-
-//apply from: '../bintray_java.gradle'
-//apply from: '../nexus_java.gradle'
