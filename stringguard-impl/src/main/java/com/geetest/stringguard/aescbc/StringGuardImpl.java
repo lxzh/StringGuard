@@ -53,7 +53,9 @@ public final class StringGuardImpl implements IStringGuard {
     private Cipher mDecryptedCipher;
 
     @Override
-    public String encrypt(String data, String key) {
+    public String encrypt(String... param) {
+        String data = param[0];
+        String key = param[1];
         if (key == null) {
             throw new IllegalArgumentException("Invalid AES key length: " + 0 + " bytes");
         }
@@ -75,7 +77,9 @@ public final class StringGuardImpl implements IStringGuard {
     }
 
     @Override
-    public String decrypt(String data, String key) {
+    public String decrypt(String... param) {
+        String data = param[0];
+        String key = param[1];
         if (key == null) {
             throw new IllegalArgumentException("Invalid AES key length: " + 0 + " bytes");
         }
@@ -97,9 +101,14 @@ public final class StringGuardImpl implements IStringGuard {
     }
 
     @Override
-    public boolean overflow(String data, String key) {
+    public boolean overflow(String data) {
         // CBC has some padding length, I think 65535/2 is absolute ok.
         return data.length() * 4 / 3 >= 65535 / 2;
+    }
+
+    @Override
+    public String key() {
+        return null;
     }
 
     private void initAESEncryptCipherIfNecessary(String key) {

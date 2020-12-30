@@ -44,8 +44,18 @@ public final class StringGuardClassInjector {
     private IStringGuard mStringGuardImpl;
     private StringGuardMappingPrinter mMappingPrinter;
 
-    public StringGuardClassInjector(boolean useKey, String key, boolean enable, boolean debug, String[] includePackages, String[] excludePackages, String implementation, String guardClassName, StringGuardMappingPrinter mappingPrinter) {
-        this.mConfig = new Config(useKey, key, enable, debug, includePackages, excludePackages, implementation);
+    public StringGuardClassInjector(boolean useKey,
+                                    String key,
+                                    boolean enable,
+                                    boolean debug,
+                                    String[] includePackages,
+                                    String[] excludePackages,
+                                    String[] includeClasses,
+                                    String[] excludeClasses,
+                                    String implementation,
+                                    String guardClassName,
+                                    StringGuardMappingPrinter mappingPrinter) {
+        this.mConfig = new Config(useKey, key, enable, debug, includePackages, excludePackages, includeClasses, excludeClasses, implementation);
         Log.v("StringGuardClassInjector mConfig=" + mConfig);
         WhiteLists.printWhiteList("StringGuardClassInjector");
         this.mStringGuardImpl = new StringGuardWrapper(implementation);
