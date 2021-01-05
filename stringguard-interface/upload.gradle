@@ -1,0 +1,27 @@
+apply plugin: 'com.novoda.bintray-release'
+apply plugin: 'maven'
+
+//生成源码jar包
+task sourcesJar(type: Jar) {
+    from project.file('src/main/test')
+    classifier = 'sources'
+}
+
+artifacts {
+    archives sourcesJar
+}
+
+repositories {
+    jcenter()
+}
+
+publish {
+    artifactId = ARTIFACTID
+    userOrg = USER
+    groupId = GROUP
+    uploadName = ARTIFACTID
+    publishVersion = VERSION
+    desc = DESCRIPTION
+    website = 'https://github.com/lxzh/StringGuard'
+    licences = ['Apache-2.0']
+}

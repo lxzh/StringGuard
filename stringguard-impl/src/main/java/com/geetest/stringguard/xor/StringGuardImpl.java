@@ -30,7 +30,9 @@ public final class StringGuardImpl implements IStringGuard {
     private static final String CHARSET_NAME_UTF_8 = "UTF-8";
 
     @Override
-    public String encrypt(String data, String key) {
+    public String encrypt(String... param) {
+        String data = param[0];
+        String key = param[1];
         String newData;
         try {
             newData = new String(Base64.encode(xor(data.getBytes(CHARSET_NAME_UTF_8), key), Base64.NO_WRAP));
@@ -41,7 +43,9 @@ public final class StringGuardImpl implements IStringGuard {
     }
 
     @Override
-    public String decrypt(String data, String key) {
+    public String decrypt(String... param) {
+        String data = param[0];
+        String key = param[1];
         String newData;
         try {
             newData = new String(xor(Base64.decode(data, Base64.NO_WRAP), key), CHARSET_NAME_UTF_8);
@@ -52,8 +56,13 @@ public final class StringGuardImpl implements IStringGuard {
     }
 
     @Override
-    public boolean overflow(String data, String key) {
+    public boolean overflow(String data) {
         return data != null && data.length() * 4 / 3 >= 65535;
+    }
+
+    @Override
+    public String key() {
+        return null;
     }
 
     private static byte[] xor(byte[] data, String key) {

@@ -37,6 +37,9 @@ class StringGuardPlugin implements Plugin<Project> {
         project.extensions.create(PLUGIN_NAME, StringGuardExtension)
 
         def android = project.extensions.android
+        if (!project.stringguard.enable) {
+            return
+        }
         if (android instanceof AppExtension) {
             applyApplication(project, android)
         }

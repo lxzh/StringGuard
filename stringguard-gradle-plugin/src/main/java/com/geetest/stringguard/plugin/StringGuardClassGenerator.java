@@ -79,7 +79,7 @@ public final class StringGuardClassGenerator {
 
         javaWriter.emitEmptyLine();
         javaWriter.beginMethod(String.class.getSimpleName(), "key",
-                ImmutableSet.of(Modifier.PUBLIC, Modifier.STATIC) );
+                ImmutableSet.of(Modifier.PUBLIC, Modifier.STATIC));
         javaWriter.emitStatement("return " + "IMPL.key()");
         javaWriter.endMethod();
 

@@ -41,6 +41,10 @@ abstract class StringGuardTransform extends Transform {
         project.afterEvaluate {
             mExtension = project.stringguard
             Log.v("StringGuardTransform " + mExtension)
+            boolean enable = mExtension.isEnable()
+            if(!enable) {
+                return
+            }
             boolean useKey = mExtension.isUseKey()
             String key = mExtension.getKey()
             String implementation = mExtension.getImplementation()
@@ -53,7 +57,7 @@ abstract class StringGuardTransform extends Transform {
             if (implementation == null || implementation.length() == 0) {
                 throw new IllegalArgumentException("Missing stringguard implementation config")
             }
-            if (project.stringguard.enable) {
+            if (mExtension.enable) {
                 def applicationId = variants.first().applicationId
                 def manifestFile = project.file("src/main/AndroidManifest.xml")
                 if (manifestFile.exists()) {
@@ -92,8 +96,10 @@ abstract class StringGuardTransform extends Transform {
                             new File(project.buildDir, "outputs/mapping/${variant.name.toLowerCase()}/stringguard.txt"))
                     // Create class injector
                     mInjector = new StringGuardClassInjector(extensionConfig.useKey, extensionConfig.key,
-                            extensionConfig.enable, extensionConfig.debug, extensionConfig.includePackages,
-                            extensionConfig.excludePackages, extensionConfig.implementation,
+                            extensionConfig.enable, extensionConfig.debug,
+                            extensionConfig.includePackages, extensionConfig.excludePackages,
+                            extensionConfig.includeClasses, extensionConfig.excludeClasses,
+                            extensionConfig.implementation,
                             applicationId + "." + GUARD_CLASS_NAME, mMappingPrinter)
 
                     WhiteLists.addWhiteList(WhiteLists.shortClassName(extensionConfig.implementation))
@@ -130,6 +136,10 @@ abstract class StringGuardTransform extends Transform {
 
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
+        if(!mExtension.isEnable()) {
+            return
+        }
+
         def dirInputs = new HashSet<>()
         def jarInputs = new HashSet<>()
 

@@ -36,6 +36,8 @@ class StringGuardExtension {
     boolean debug = false
     String[] includePackages = []
     String[] excludePackages = []
+    String[] includeClasses = []
+    String[] excludeClasses = []
     String implementation
 
     @Override
@@ -47,6 +49,8 @@ class StringGuardExtension {
                 "debug=" + debug + ", " +
                 "includePackages=" + includePackages + ", " +
                 "excludePackages=" + excludePackages + ", " +
+                "includeClasses=" + includeClasses + ", " +
+                "excludeClasses=" + excludeClasses + ", " +
                 "implementation=" + implementation + "}";
     }
 }

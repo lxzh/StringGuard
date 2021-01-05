@@ -36,11 +36,11 @@ public final class ClassVisitorFactory {
     public static ClassVisitor create(IStringGuard sgImpl, StringGuardMappingPrinter mappingPrinter, Config config, String guardClassName,
                                       String className, ClassWriter cw) {
         Log.v("ClassVisitorFactory create className: " + className);
-        if (WhiteLists.inWhiteList(className) || isInExcludePackages(config.getExcludePackages(), className)) {
+        if (WhiteLists.inWhiteList(className) || isInExcludePackages(config.getExcludePackages(), className) || isInExcludeClasses(config.getExcludeClasses(), className)) {
             Log.v("StringGuard ignore: " + className);
             return createEmpty(cw);
         }
-        if (isInIncludePackages(config.getIncludePackages(), className)) {
+        if (isInIncludePackages(config.getIncludePackages(), className) || isInIncludeClasses(config.getIncludeClasses(), className)) {
             Log.v("StringGuard include: " + className);
             return new StringGuardClassVisitor(sgImpl, mappingPrinter, guardClassName, config.isUseKey(), config.getKey(), cw);
         }
@@ -53,15 +53,15 @@ public final class ClassVisitorFactory {
         };
     }
 
-    private static boolean isInIncludePackages(String[] includePackages, String className) {
+    private static boolean isInIncludePackages(String[] packages, String className) {
         if (TextUtils.isEmpty(className)) {
             return false;
         }
-        if (includePackages == null || includePackages.length == 0) {
+        if (packages == null || packages.length == 0) {
             // default we fog all packages.
             return true;
         }
-        for (String pkg : includePackages) {
+        for (String pkg : packages) {
             if (className.replace('/', '.').startsWith(pkg + ".")) {
                 return true;
             }
@@ -77,8 +77,40 @@ public final class ClassVisitorFactory {
             // default we fog all packages.
             return false;
         }
-        for (String fogPackage : packages) {
-            if (className.replace('/', '.').startsWith(fogPackage + ".")) {
+        for (String pkg : packages) {
+            if (className.replace('/', '.').startsWith(pkg + ".")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isInIncludeClasses(String[] classes, String className) {
+        if (TextUtils.isEmpty(className)) {
+            return false;
+        }
+        if (classes == null || classes.length == 0) {
+            // default we fog all classes.
+            return true;
+        }
+        for (String clazz : classes) {
+            if (className.replace('/', '.').equals(clazz)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isInExcludeClasses(String[] classes, String className) {
+        if (TextUtils.isEmpty(className)) {
+            return false;
+        }
+        if (classes == null || classes.length == 0) {
+            // default we fog all classes.
+            return false;
+        }
+        for (String clazz : classes) {
+            if (className.replace('/', '.').equals(clazz)) {
                 return true;
             }
         }
