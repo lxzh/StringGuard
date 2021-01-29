@@ -149,7 +149,7 @@ abstract class StringGuardTransform extends Transform {
 
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
-        if(!mExtension.isEnable()) {
+        if (!mExtension.isEnable()) {
             return
         }
 
@@ -192,22 +192,79 @@ abstract class StringGuardTransform extends Transform {
             }
         }) : new File[0];
         Log.v("transform files:" + Arrays.toString(files))
-        files.each { file ->
-            Log.v("transform file:" + file)
-            String jarHash = getUniqueHashName(file)
-            String fileName = file.getName()
-            String jarIDName = "android.local.jars:jetified-" + fileName + ":" + jarHash.substring(jarHash.indexOf("_") + 1)
-            Log.v("transform UniqueHashName:" + jarHash)
-            Object obj = ImmutableJarInputWrapper.newJarInput(jarIDName, file, Status.NOTCHANGED, TransformManager.CONTENT_CLASS,
-                    Sets.immutableEnumSet(QualifiedContent.Scope.PROJECT, QualifiedContent.Scope.SUB_PROJECTS))
-            Log.v("transform additional added input:" + obj)
-            jarInputs.add(obj)
-        }
+//        files.each { file ->
+//            Log.v("transform file:" + file)
+//            String jarHash = getUniqueHashName(file)
+//            String fileName = file.getName()
+//            String jarIDName = "android.local.jars:jetified-" + fileName + ":" + jarHash.substring(jarHash.indexOf("_") + 1)
+//            Log.v("transform UniqueHashName:" + jarHash)
+//            Object obj = ImmutableJarInputWrapper.newJarInput(jarIDName, file, Status.NOTCHANGED, TransformManager.CONTENT_CLASS,
+//                    Sets.immutableEnumSet(QualifiedContent.Scope.PROJECT, QualifiedContent.Scope.SUB_PROJECTS))
+//            Log.v("transform additional added input:" + obj)
+//            jarInputs.add(obj)
+//        }
 
         if (mMappingPrinter != null) {
             mMappingPrinter.startMappingOutput()
             mMappingPrinter.ouputInfo(mExtension.getKey(), mExtension.getImplementation())
         }
+
+//        def classpath
+//        classpath += mProject.configurations.compile
+//        classpath += mProject.configurations.implementation
+//        classpath += mProject.configurations.api
+        mProject.configurations.compile.filter {
+            Log.v("transform compile aar or jar:" + it.name)
+            it.name.endsWith('.aar') || it.name.endsWith('.jar')
+        }
+
+        Log.v("transform implementation:" + mProject.configurations.implementation + " " + mProject.configurations.implementation.getAllDependencies())
+//        mProject.configurations.implementation.setCanBeResolved(true)
+
+        Log.v("transform implementation incoming:" + mProject.configurations.implementation.getIncoming())
+        Log.v("transform implementation incoming name:" + mProject.configurations.implementation.getIncoming().getName())
+        Log.v("transform implementation incoming path:" + mProject.configurations.implementation.getIncoming().getPath())
+        Log.v("transform implementation incoming files:" + mProject.configurations.implementation.getIncoming().getFiles())
+        mProject.configurations.implementation.getIncoming().getFiles().each { file->
+            Log.v("transform implementation incoming files file:" + file)
+            if(file.name.endsWith(".jar")) {
+                String jarHash = getUniqueHashName(file)
+                String fileName = file.getName()
+                String jarIDName = "android.local.jars:jetified-" + fileName + ":" + jarHash.substring(jarHash.indexOf("_") + 1)
+                Log.v("transform UniqueHashName:" + jarHash)
+                Object obj = ImmutableJarInputWrapper.newJarInput(jarIDName, file, Status.NOTCHANGED, TransformManager.CONTENT_CLASS,
+                        Sets.immutableEnumSet(QualifiedContent.Scope.PROJECT, QualifiedContent.Scope.SUB_PROJECTS))
+                Log.v("transform additional added input:" + obj)
+                jarInputs.add(obj)
+            }
+        }
+        mProject.configurations.implementation.getIncoming().getDependencies().each {
+            Log.v("transform implementation incoming dependencies it:" + it)
+        }
+//
+//        mProject.configurations.implementation.setCanBeResolved(true)
+        mProject.configurations.implementation.filter {
+            Log.v("transform implementation aar or jar:" + it.name)
+            it.name.endsWith('.aar') || it.name.endsWith('.jar')
+        }
+        mProject.configurations.implementation.getAllDependencies().all {
+            Log.v("transform implementation:" + it)
+        }
+
+//        mProject.configurations.api.setCanBeResolved(true)
+        mProject.configurations.api.filter {
+            Log.v("transform api aar or jar:" + it.name)
+            it.name.endsWith('.aar') || it.name.endsWith('.jar')
+        }
+//        def aarDependencies = classpath.filter { it.name.endsWith('.aar') }
+//        def jarDependencies = classpath.filter { it.name.endsWith('.jar') }
+//        aarDependencies.each {
+//            Log.v("transform aar:" + it.name)
+//        }
+//        jarDependencies.each {
+//            Log.v("transform jar:" + it.name)
+//        }
+
 
         Log.v("transform mExtension:" + mExtension)
         WhiteLists.addWhiteList(WhiteLists.shortClassName(mExtension.getImplementation()))

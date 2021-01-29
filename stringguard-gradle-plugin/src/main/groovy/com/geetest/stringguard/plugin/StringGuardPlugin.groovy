@@ -37,6 +37,13 @@ class StringGuardPlugin implements Plugin<Project> {
         project.extensions.create(PLUGIN_NAME, StringGuardExtension)
 
         def android = project.extensions.android
+        Log.v("StringGuardPlugin apply project:" + project + " class:" + project.getClass().toString())
+        Log.v("StringGuardPlugin apply extensions:" + project.extensions)
+        Log.v("StringGuardPlugin apply android:" + android)
+        project.configurations.implementation.setCanBeResolved(true)
+        project.configurations.each {
+            Log.v("StringGuardPlugin apply configurations:" + it.name)
+        }
         if (!project.stringguard.enable) {
             return
         }
@@ -74,6 +81,12 @@ class StringGuardPlugin implements Plugin<Project> {
 
     void applyLibrary(Project project, def android) {
         android.registerTransform(new StringGuardTransformForLibrary(project, android.libraryVariants))
+        android.getTransformsDependencies().each{ dependencies->
+            Log.v("StringGuardPlugin applyLibrary dependencies:" + dependencies)
+            dependencies.each { obj->
+                Log.v("StringGuardPlugin applyLibrary dependencies->obj:" + obj)
+            }
+        }
     }
 
 }
