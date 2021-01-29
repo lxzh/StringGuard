@@ -51,16 +51,18 @@ import java.util.List;
     private StringGuardMappingPrinter mMappingPrinter;
     private String mClassName;
     private final boolean mUseKey;
+    private final int mGuardMode;
     private final String mKey;
 
     private boolean mIgnoreClass;
 
     /* package */ StringGuardClassVisitor(IStringGuard sgImpl, StringGuardMappingPrinter mappingPrinter,
-                                          String className, boolean useKey, String key, ClassWriter cw) {
+                                          String className, int guardMode, String key, ClassWriter cw) {
         super(Opcodes.ASM5, cw);
         this.mStringGuardImpl = sgImpl;
         this.mMappingPrinter = mappingPrinter;
-        this.mUseKey = useKey;
+        this.mGuardMode = guardMode;
+        this.mUseKey = guardMode == 0;
         this.mKey = key;
         this.mGuardClassName = className.replace('.', '/');
     }

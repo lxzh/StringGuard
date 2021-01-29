@@ -27,12 +27,17 @@ package com.geetest.stringguard.plugin;
  * @author Megatron King
  * @since 2017/3/7 17:44
  */
-
 class StringGuardExtension {
 
-    boolean useKey = true
-    String key
     boolean enable = true
+    /**
+     * 混淆模式：
+     *  0：value/key 加解密模式
+     *  1：value     无key加解密模式
+     *  2：          隐藏数组模式
+     */
+    int guardMode = 0
+    String key
     boolean debug = false
     String[] includePackages = []
     String[] excludePackages = []
@@ -40,12 +45,13 @@ class StringGuardExtension {
     String[] excludeClasses = []
     String implementation
 
+
     @Override
-    public String toString() {
+    String toString() {
         return "StringGuardExtension{" +
-                "useKey=" + useKey + ", " +
-                "key=" + key + ", " +
                 "enable=" + enable + ", " +
+                "guardMode=" + guardMode + ", " +
+                "key=" + key + ", " +
                 "debug=" + debug + ", " +
                 "includePackages=" + includePackages + ", " +
                 "excludePackages=" + excludePackages + ", " +

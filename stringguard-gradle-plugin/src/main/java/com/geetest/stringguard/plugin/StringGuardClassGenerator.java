@@ -31,7 +31,7 @@ import javax.lang.model.element.Modifier;
  */
 public final class StringGuardClassGenerator {
 
-    public static void generate(File outputFile, String packageName, String className, String key,
+    public static void generate(File outputFile, String packageName, String className,
                                 String implementation) throws IOException {
         File outputDir = outputFile.getParentFile();
         if (!outputDir.exists() && !outputDir.mkdirs()) {

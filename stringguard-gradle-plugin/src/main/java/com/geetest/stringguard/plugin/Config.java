@@ -3,9 +3,15 @@ package com.geetest.stringguard.plugin;
 import java.util.Arrays;
 
 public class Config {
-    private boolean useKey;
-    private String key;
     private boolean enable;
+    /**
+     * 混淆模式：
+     *  0：value/key 加解密模式
+     *  1：value     无key加解密模式
+     *  2：          隐藏数组模式
+     */
+    private int guardMode;
+    private String key;
     private boolean debug;
     private String[] includePackages;
     private String[] excludePackages;
@@ -13,18 +19,18 @@ public class Config {
     private String[] excludeClasses;
     private String implementation;
 
-    public Config(boolean useKey,
+    public Config(boolean enable,
+                  int guardMode,
                   String key,
-                  boolean enable,
                   boolean debug,
                   String[] includePackages,
                   String[] excludePackages,
                   String[] includeClasses,
                   String[] excludeClasses,
                   String implementation) {
-        this.useKey = useKey;
-        this.key = key;
         this.enable = enable;
+        this.guardMode = guardMode;
+        this.key = key;
         this.debug = debug;
         this.includePackages = includePackages;
         this.excludePackages = excludePackages;
@@ -33,12 +39,20 @@ public class Config {
         this.implementation = implementation;
     }
 
-    public boolean isUseKey() {
-        return useKey;
+    public boolean isEnable() {
+        return enable;
     }
 
-    public void setUseKey(boolean useKey) {
-        this.useKey = useKey;
+    public void setEnable(boolean enable) {
+        this.enable = enable;
+    }
+
+    public int getGuardMode() {
+        return guardMode;
+    }
+
+    public void setGuardMode(int guardMode) {
+        this.guardMode = guardMode;
     }
 
     public String getKey() {
@@ -47,14 +61,6 @@ public class Config {
 
     public void setKey(String key) {
         this.key = key;
-    }
-
-    public boolean isEnable() {
-        return enable;
-    }
-
-    public void setEnable(boolean enable) {
-        this.enable = enable;
     }
 
     public boolean isDebug() {
@@ -108,9 +114,9 @@ public class Config {
     @Override
     public String toString() {
         return "Config{" +
-                "useKey=" + useKey +
+                "enable=" + enable +
+                ", guardMode=" + guardMode +
                 ", key='" + key + '\'' +
-                ", enable=" + enable +
                 ", debug=" + debug +
                 ", includePackages=" + Arrays.toString(includePackages) +
                 ", excludePackages=" + Arrays.toString(excludePackages) +

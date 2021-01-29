@@ -52,7 +52,9 @@ final class WhiteLists {
     }
 
     public static void addWhiteList(String name) {
-        CLASS_WHITE_LIST.add(name);
+        if (!CLASS_WHITE_LIST.contains(name)) {
+            CLASS_WHITE_LIST.add(name);
+        }
     }
 
     private static boolean checkClass(String name) {

@@ -42,7 +42,7 @@ public final class ClassVisitorFactory {
         }
         if (isInIncludePackages(config.getIncludePackages(), className) || isInIncludeClasses(config.getIncludeClasses(), className)) {
             Log.v("StringGuard include: " + className);
-            return new StringGuardClassVisitor(sgImpl, mappingPrinter, guardClassName, config.isUseKey(), config.getKey(), cw);
+            return new StringGuardClassVisitor(sgImpl, mappingPrinter, guardClassName, config.getGuardMode(), config.getKey(), cw);
         }
         Log.v("StringGuard execute: " + className);
         return createEmpty(cw);

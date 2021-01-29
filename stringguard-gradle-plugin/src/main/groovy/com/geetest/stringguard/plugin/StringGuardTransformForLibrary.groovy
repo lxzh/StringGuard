@@ -2,6 +2,7 @@ package com.geetest.stringguard.plugin
 
 import com.android.build.api.transform.QualifiedContent
 import com.android.build.gradle.api.BaseVariant
+import com.geetest.stringguard.plugin.utils.Log
 import com.google.common.collect.ImmutableSet
 import org.gradle.api.DomainObjectSet
 import org.gradle.api.Project
@@ -16,6 +17,7 @@ class StringGuardTransformForLibrary extends StringGuardTransform {
 
     StringGuardTransformForLibrary(Project project, DomainObjectSet<BaseVariant> variants) {
         super(project, variants)
+        mVariants = variants;
     }
 
     @Override

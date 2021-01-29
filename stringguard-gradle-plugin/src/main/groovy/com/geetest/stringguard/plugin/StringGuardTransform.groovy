@@ -16,10 +16,14 @@ package com.geetest.stringguard.plugin
 
 import com.android.build.api.transform.*
 import com.android.build.gradle.api.BaseVariant
+import com.android.build.gradle.internal.pipeline.ImmutableJarInput
+import com.android.build.gradle.internal.pipeline.ImmutableJarInputWrapper
+import com.android.build.gradle.internal.pipeline.TransformManager
 import com.android.utils.FileUtils
 import com.geetest.stringguard.plugin.utils.Log
 import com.geetest.stringguard.plugin.utils.MD5
 import com.google.common.collect.ImmutableSet
+import com.google.common.collect.Sets
 import com.google.common.io.Files
 import groovy.io.FileType
 import org.gradle.api.DefaultTask
@@ -32,12 +36,15 @@ abstract class StringGuardTransform extends Transform {
     public static final String GUARD_CLASS_NAME = 'StringGuard'
     private static final String TRANSFORM_NAME = 'StringGuard'
 
+    private Project mProject;
+    protected DomainObjectSet<BaseVariant> mVariants;
     protected StringGuardClassInjector mInjector
     protected StringGuardMappingPrinter mMappingPrinter
 
     protected StringGuardExtension mExtension;
 
     StringGuardTransform(Project project, DomainObjectSet<BaseVariant> variants) {
+        this.mProject = project
         project.afterEvaluate {
             mExtension = project.stringguard
             Log.v("StringGuardTransform " + mExtension)
@@ -45,7 +52,7 @@ abstract class StringGuardTransform extends Transform {
             if(!enable) {
                 return
             }
-            boolean useKey = mExtension.isUseKey()
+            boolean useKey = mExtension.getGuardMode()==0
             String key = mExtension.getKey()
             String implementation = mExtension.getImplementation()
             if (useKey) {
@@ -57,6 +64,11 @@ abstract class StringGuardTransform extends Transform {
             if (implementation == null || implementation.length() == 0) {
                 throw new IllegalArgumentException("Missing stringguard implementation config")
             }
+            Log.v("StringGuardTransform afterEvaluate variants:" + variants.toString())
+            variants.all { variant->
+                Log.v("StringGuardTransform afterEvaluate variant:" + variant.name)
+            }
+
             if (mExtension.enable) {
                 def applicationId = variants.first().applicationId
                 def manifestFile = project.file("src/main/AndroidManifest.xml")
@@ -78,7 +90,7 @@ abstract class StringGuardTransform extends Transform {
         }
     }
 
-    void createGuardClass(def project, StringGuardExtension extensionConfig,
+    void createGuardClass(def project, StringGuardExtension extConfig,
                           DomainObjectSet<BaseVariant> variants, def applicationId) {
         variants.all { variant ->
             def variantName = variant.name.toUpperCase()[0] + variant.name.substring(1, variant.name.length() - 1)
@@ -95,20 +107,21 @@ abstract class StringGuardTransform extends Transform {
                     mMappingPrinter = new StringGuardMappingPrinter(
                             new File(project.buildDir, "outputs/mapping/${variant.name.toLowerCase()}/stringguard.txt"))
                     // Create class injector
-                    mInjector = new StringGuardClassInjector(extensionConfig.useKey, extensionConfig.key,
-                            extensionConfig.enable, extensionConfig.debug,
-                            extensionConfig.includePackages, extensionConfig.excludePackages,
-                            extensionConfig.includeClasses, extensionConfig.excludeClasses,
-                            extensionConfig.implementation,
+                    mInjector = new StringGuardClassInjector(
+                            extConfig.enable,
+                            extConfig.guardMode,
+                            extConfig.key,
+                            extConfig.debug,
+                            extConfig.includePackages, extConfig.excludePackages,
+                            extConfig.includeClasses, extConfig.excludeClasses,
+                            extConfig.implementation,
                             applicationId + "." + GUARD_CLASS_NAME, mMappingPrinter)
-
-                    WhiteLists.addWhiteList(WhiteLists.shortClassName(extensionConfig.implementation))
 
                     WhiteLists.printWhiteList("createGuardClass");
 
                     // Generate StringGuard.java
                     StringGuardClassGenerator.generate(sgFile, applicationId, GUARD_CLASS_NAME,
-                            extensionConfig.key, extensionConfig.implementation)
+                            extConfig.implementation)
                 }
             }
         }
@@ -147,14 +160,48 @@ abstract class StringGuardTransform extends Transform {
             transformInvocation.getOutputProvider().deleteAll()
         }
 
+        def variantName = transformInvocation.getContext().variantName;
+
+        Log.v("transform start")
+        Log.v("transform variantName:" + variantName)
+        Log.v("transform transformInvocation:" + transformInvocation)
+        Log.v("transform transformInvocation Inputs:" + transformInvocation.getInputs())
+        Log.v("transform transformInvocation ReferencedInputs:" + transformInvocation.getReferencedInputs())
+        Log.v("transform transformInvocation SecondaryInputs:" + transformInvocation.getSecondaryInputs())
         // Collecting inputs.
         transformInvocation.inputs.each { input ->
+            Log.v("transform input:" + input)
             input.directoryInputs.each { dirInput ->
+                Log.v("transform dirInput:" + dirInput)
                 dirInputs.add(dirInput)
             }
             input.jarInputs.each { jarInput ->
+                Log.v("transform jarInput:" + jarInput)
                 jarInputs.add(jarInput)
             }
+        }
+
+        Log.v("transform mProject:" + mProject)
+        Log.v("transform BuildDir:" + mProject.getBuildDir())
+        String libDir = "intermediates\\aar_libs_directory\\"+variantName+"\\libs"
+        File externalPath = new File(mProject.getBuildDir(), libDir);
+        File[] files = externalPath.exists() ? externalPath.listFiles(new FilenameFilter() {
+            @Override
+            boolean accept(File dir, String name) {
+                return name != null && name.toLowerCase().endsWith(".jar")
+            }
+        }) : new File[0];
+        Log.v("transform files:" + Arrays.toString(files))
+        files.each { file ->
+            Log.v("transform file:" + file)
+            String jarHash = getUniqueHashName(file)
+            String fileName = file.getName()
+            String jarIDName = "android.local.jars:jetified-" + fileName + ":" + jarHash.substring(jarHash.indexOf("_") + 1)
+            Log.v("transform UniqueHashName:" + jarHash)
+            Object obj = ImmutableJarInputWrapper.newJarInput(jarIDName, file, Status.NOTCHANGED, TransformManager.CONTENT_CLASS,
+                    Sets.immutableEnumSet(QualifiedContent.Scope.PROJECT, QualifiedContent.Scope.SUB_PROJECTS))
+            Log.v("transform additional added input:" + obj)
+            jarInputs.add(obj)
         }
 
         if (mMappingPrinter != null) {
@@ -162,6 +209,8 @@ abstract class StringGuardTransform extends Transform {
             mMappingPrinter.ouputInfo(mExtension.getKey(), mExtension.getImplementation())
         }
 
+        Log.v("transform mExtension:" + mExtension)
+        WhiteLists.addWhiteList(WhiteLists.shortClassName(mExtension.getImplementation()))
         WhiteLists.printWhiteList("transform");
 
         if (!dirInputs.isEmpty() || !jarInputs.isEmpty()) {
