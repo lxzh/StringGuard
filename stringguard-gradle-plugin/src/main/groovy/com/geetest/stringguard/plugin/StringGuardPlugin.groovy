@@ -41,9 +41,9 @@ class StringGuardPlugin implements Plugin<Project> {
         Log.v("StringGuardPlugin apply extensions:" + project.extensions)
         Log.v("StringGuardPlugin apply android:" + android)
         project.configurations.implementation.setCanBeResolved(true)
-        project.configurations.each {
-            Log.v("StringGuardPlugin apply configurations:" + it.name)
-        }
+//        project.configurations.each {
+//            Log.v("StringGuardPlugin apply configurations:" + it.name)
+//        }
         if (!project.stringguard.enable) {
             return
         }

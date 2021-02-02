@@ -25,11 +25,31 @@ import com.geetest.stringguard.plugin.utils.MD5
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Sets
 import com.google.common.io.Files
+import com.google.wireless.android.sdk.stats.GradleLibrary
 import groovy.io.FileType
 import org.gradle.api.DefaultTask
 import org.gradle.api.DomainObjectSet
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.ArtifactView
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.FileCollectionDependency
+import org.gradle.api.artifacts.ModuleVersionIdentifier
+import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.ResolvableDependencies
+import org.gradle.api.artifacts.result.ResolutionResult
+import org.gradle.api.artifacts.result.ResolvedComponentResult
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.file.FileCollection
+import org.gradle.api.internal.artifacts.dependencies.DefaultSelfResolvingDependency
+import org.gradle.api.internal.file.collections.DefaultConfigurableFileCollection
+import org.gradle.api.internal.file.collections.DefaultConfigurableFileTree
+import org.gradle.api.logging.LogLevel
+import org.gradle.initialization.GradleLauncher
+
+import java.lang.reflect.Field
+import java.lang.reflect.Method
 
 abstract class StringGuardTransform extends Transform {
 
@@ -147,6 +167,25 @@ abstract class StringGuardTransform extends Transform {
         return true
     }
 
+    private List<String> getArtifactsForConfiguration(Configuration configuration) {
+        List<String> compileLibs = new ArrayList<>();
+        if (configuration.isCanBeResolved()) {
+            ResolvableDependencies incoming = configuration.getIncoming();
+            ResolutionResult resolutionResult = incoming.getResolutionResult();
+            Set<ResolvedComponentResult> components = resolutionResult.getAllComponents();
+            for (ResolvedComponentResult result : components) {
+                ModuleVersionIdentifier identifier = result.getModuleVersion();
+                if (identifier != null) {
+//                if (identifier != null && !"unspecified".equals(identifier.getVersion())) {
+                    compileLibs.add(String.join(":", identifier.getGroup(), identifier.getName(), identifier.getVersion()));
+                } else {
+                    compileLibs.add("" + identifier);
+                }
+            }
+        }
+        return compileLibs;
+    }
+
     @Override
     void transform(TransformInvocation transformInvocation) throws TransformException, InterruptedException, IOException {
         if (!mExtension.isEnable()) {
@@ -159,6 +198,9 @@ abstract class StringGuardTransform extends Transform {
         if (!transformInvocation.isIncremental()) {
             transformInvocation.getOutputProvider().deleteAll()
         }
+
+        // 配置日志等级
+        transformInvocation.getContext().logging.level = LogLevel.DEBUG;
 
         def variantName = transformInvocation.getContext().variantName;
 
@@ -226,30 +268,91 @@ abstract class StringGuardTransform extends Transform {
         Log.v("transform implementation incoming path:" + mProject.configurations.implementation.getIncoming().getPath())
         Log.v("transform implementation incoming files:" + mProject.configurations.implementation.getIncoming().getFiles())
         mProject.configurations.implementation.getIncoming().getFiles().each { file->
-            Log.v("transform implementation incoming files file:" + file)
-            if(file.name.endsWith(".jar")) {
+            Log.v("incoming file:" + file)
+            if (file.name.endsWith(".jar")) {
                 String jarHash = getUniqueHashName(file)
                 String fileName = file.getName()
                 String jarIDName = "android.local.jars:jetified-" + fileName + ":" + jarHash.substring(jarHash.indexOf("_") + 1)
-                Log.v("transform UniqueHashName:" + jarHash)
+                Log.v("UniqueHashName:" + jarHash)
                 Object obj = ImmutableJarInputWrapper.newJarInput(jarIDName, file, Status.NOTCHANGED, TransformManager.CONTENT_CLASS,
                         Sets.immutableEnumSet(QualifiedContent.Scope.PROJECT, QualifiedContent.Scope.SUB_PROJECTS))
-                Log.v("transform additional added input:" + obj)
+                Log.v("additional added input:" + obj)
                 jarInputs.add(obj)
             }
         }
         mProject.configurations.implementation.getIncoming().getDependencies().each {
-            Log.v("transform implementation incoming dependencies it:" + it)
+            Log.v("incoming dependencies:" + it)
+        }
+
+//        ResolvableDependencies resolvableDeps = implementation.getIncoming();
+//        ArtifactView view = resolvableDeps.artifactView({ conf ->
+//            //配置 view 过滤的属性，只需要jar
+//            conf.attributes(attr -> {attr.attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.JAR.type)})
+//        })
+//        String value
+//        resolvableDeps.artifactView(conf -> {
+//            conf.attributes(container ->
+//                    container.attribute(Attribute.of("artifactType", String.class), value)
+//            )
+//        })
+//
+//        Set<File> jars = view.getFiles().getFiles()
+//        jars.each { file->
+//            Log.v("transform implementation incoming artifactView file:" + file)
+//        }
+        List<String> configs = getArtifactsForConfiguration(mProject.configurations.implementation);
+        configs.each { str->
+            Log.v("incoming configs :" + str)
         }
 //
 //        mProject.configurations.implementation.setCanBeResolved(true)
-        mProject.configurations.implementation.filter {
-            Log.v("transform implementation aar or jar:" + it.name)
-            it.name.endsWith('.aar') || it.name.endsWith('.jar')
-        }
+//        mProject.configurations.implementation.filter {
+//            Log.v("implementation aar or jar:" + it.name)
+//            it.name.endsWith('.aar') || it.name.endsWith('.jar')
+//        }
         mProject.configurations.implementation.getAllDependencies().all {
-            Log.v("transform implementation:" + it)
+            Log.v("implementation allDeps:" + it)
+            if(it instanceof DefaultSelfResolvingDependency) {
+                DefaultSelfResolvingDependency tmp = (DefaultSelfResolvingDependency)it;
+                FileCollection fc = tmp.getFiles();
+                fc.each { file ->
+                    Log.v("allDeps file:" + file.getAbsolutePath())
+                }
+                Log.v("implementation allDeps:" + fc.getClass())
+                if (fc instanceof DefaultConfigurableFileTree) {
+                    ((DefaultConfigurableFileTree) fc).exclude("*.jar")
+                } else if (fc instanceof DefaultConfigurableFileCollection) {
+                    DefaultConfigurableFileCollection.class.getFields().each { field ->
+                        Log.v("implementation DefaultConfigurableFileCollection:1:" + field.name)
+                    }
+                    DefaultConfigurableFileCollection.class.getDeclaredFields().each { field ->
+                        Log.v("implementation DefaultConfigurableFileCollection:2:" + field.name)
+                    }
+                    Field field = DefaultConfigurableFileCollection.class.getDeclaredField("filesWrapper")
+                    field.setAccessible(true)
+                    Object filesWrapper = field.get(fc)
+                    Log.v("implementation filesWrapper:" + filesWrapper)
+                    Method size = filesWrapper.getClass().getDeclaredMethod("size", new Class<?>[0])
+                    size.setAccessible(true)
+                    Log.v("implementation filesWrapper size:" + size.invoke(filesWrapper))
+
+                    Method iterator = filesWrapper.getClass().getDeclaredMethod("iterator", new Class<?>[0])
+                    iterator.setAccessible(true)
+                    Iterator<Object> iteratorObj = iterator.invoke(filesWrapper, new Object[0])
+                    iteratorObj.each { itt->
+                        Log.v("implementation filesWrapper itt:" + itt)
+                    }
+
+                    Method clear = filesWrapper.getClass().getDeclaredMethod("clear", new Class<?>[0])
+                    clear.setAccessible(true)
+                    clear.invoke(filesWrapper, new Object[0])
+                    Log.v("implementation filesWrapper size:" + size.invoke(filesWrapper))
+                }
+                Log.v("implementation allDeps:" + tmp.getFiles().toString())
+
+            }
         }
+
 
 //        mProject.configurations.api.setCanBeResolved(true)
         mProject.configurations.api.filter {
@@ -326,6 +429,7 @@ abstract class StringGuardTransform extends Transform {
                     File jarOutputFile = transformInvocation.outputProvider.getContentLocation(
                             getUniqueHashName(jarInputFile), getOutputTypes(), getScopes(), Format.JAR
                     )
+                    Log.v("transform jarInput:" + jarInput + " jarOutputFile:" + jarOutputFile)
 
                     FileUtils.mkdirs(jarOutputFile.parentFile)
 
@@ -355,6 +459,12 @@ abstract class StringGuardTransform extends Transform {
         if (mMappingPrinter != null) {
             mMappingPrinter.endMappingOutput()
         }
+        int len = files.length
+        for (int i = len - 1; i >= 0; i--) {
+            File file = files[i]
+            file.delete()
+        }
+        Log.v("transform files:" + Arrays.toString(files))
     }
 
     String getUniqueHashName(File fileInput) {
