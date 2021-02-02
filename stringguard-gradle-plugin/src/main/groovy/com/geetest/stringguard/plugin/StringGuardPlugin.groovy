@@ -36,14 +36,23 @@ class StringGuardPlugin implements Plugin<Project> {
     void apply(Project project) {
         project.extensions.create(PLUGIN_NAME, StringGuardExtension)
 
+        project.configurations {
+            stringguarded
+        }
+
+        project.dependencies {
+            compileOnly project.configurations.stringguarded
+        }
+
         def android = project.extensions.android
         Log.v("StringGuardPlugin apply project:" + project + " class:" + project.getClass().toString())
         Log.v("StringGuardPlugin apply extensions:" + project.extensions)
         Log.v("StringGuardPlugin apply android:" + android)
         project.configurations.implementation.setCanBeResolved(true)
-//        project.configurations.each {
-//            Log.v("StringGuardPlugin apply configurations:" + it.name)
-//        }
+        project.configurations.each {
+            Log.v("StringGuardPlugin apply configurations:" + it.name)
+        }
+
         if (!project.stringguard.enable) {
             return
         }
@@ -53,6 +62,11 @@ class StringGuardPlugin implements Plugin<Project> {
         if (android instanceof LibraryExtension) {
             applyLibrary(project, android)
         }
+
+//
+//        project.dependencies {
+//            complieOnly project.configurations.stringguarded
+//        }
 
         project.afterEvaluate {
             Log.setDebug(project.stringguard.debug)

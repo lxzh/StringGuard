@@ -168,7 +168,7 @@ abstract class StringGuardTransform extends Transform {
     }
 
     private List<String> getArtifactsForConfiguration(Configuration configuration) {
-        List<String> compileLibs = new ArrayList<>();
+        List<String> relativeLibs = new ArrayList<>();
         if (configuration.isCanBeResolved()) {
             ResolvableDependencies incoming = configuration.getIncoming();
             ResolutionResult resolutionResult = incoming.getResolutionResult();
@@ -176,14 +176,13 @@ abstract class StringGuardTransform extends Transform {
             for (ResolvedComponentResult result : components) {
                 ModuleVersionIdentifier identifier = result.getModuleVersion();
                 if (identifier != null) {
-//                if (identifier != null && !"unspecified".equals(identifier.getVersion())) {
-                    compileLibs.add(String.join(":", identifier.getGroup(), identifier.getName(), identifier.getVersion()));
+                    relativeLibs.add(String.join(":", identifier.getGroup(), identifier.getName(), identifier.getVersion()));
                 } else {
-                    compileLibs.add("" + identifier);
+                    relativeLibs.add("" + identifier);
                 }
             }
         }
-        return compileLibs;
+        return relativeLibs;
     }
 
     @Override
@@ -267,8 +266,8 @@ abstract class StringGuardTransform extends Transform {
         Log.v("transform implementation incoming name:" + mProject.configurations.implementation.getIncoming().getName())
         Log.v("transform implementation incoming path:" + mProject.configurations.implementation.getIncoming().getPath())
         Log.v("transform implementation incoming files:" + mProject.configurations.implementation.getIncoming().getFiles())
-        mProject.configurations.implementation.getIncoming().getFiles().each { file->
-            Log.v("incoming file:" + file)
+        mProject.configurations.stringguarded.getIncoming().getFiles().each { file->
+            Log.v("incoming file it:" + file)
             if (file.name.endsWith(".jar")) {
                 String jarHash = getUniqueHashName(file)
                 String fileName = file.getName()
@@ -283,23 +282,10 @@ abstract class StringGuardTransform extends Transform {
         mProject.configurations.implementation.getIncoming().getDependencies().each {
             Log.v("incoming dependencies:" + it)
         }
+        mProject.configurations.implementation.getIncoming().getFiles().each { file->
+            Log.v("incoming file:" + file)
+        }
 
-//        ResolvableDependencies resolvableDeps = implementation.getIncoming();
-//        ArtifactView view = resolvableDeps.artifactView({ conf ->
-//            //配置 view 过滤的属性，只需要jar
-//            conf.attributes(attr -> {attr.attribute(AndroidArtifacts.ARTIFACT_TYPE, AndroidArtifacts.ArtifactType.JAR.type)})
-//        })
-//        String value
-//        resolvableDeps.artifactView(conf -> {
-//            conf.attributes(container ->
-//                    container.attribute(Attribute.of("artifactType", String.class), value)
-//            )
-//        })
-//
-//        Set<File> jars = view.getFiles().getFiles()
-//        jars.each { file->
-//            Log.v("transform implementation incoming artifactView file:" + file)
-//        }
         List<String> configs = getArtifactsForConfiguration(mProject.configurations.implementation);
         configs.each { str->
             Log.v("incoming configs :" + str)
@@ -315,10 +301,11 @@ abstract class StringGuardTransform extends Transform {
             if(it instanceof DefaultSelfResolvingDependency) {
                 DefaultSelfResolvingDependency tmp = (DefaultSelfResolvingDependency)it;
                 FileCollection fc = tmp.getFiles();
+                Log.v("implementation allDeps fc:" + fc.toString())
+                Log.v("implementation allDeps fc class:" + fc.getClass())
                 fc.each { file ->
                     Log.v("allDeps file:" + file.getAbsolutePath())
                 }
-                Log.v("implementation allDeps:" + fc.getClass())
                 if (fc instanceof DefaultConfigurableFileTree) {
                     ((DefaultConfigurableFileTree) fc).exclude("*.jar")
                 } else if (fc instanceof DefaultConfigurableFileCollection) {
@@ -348,8 +335,6 @@ abstract class StringGuardTransform extends Transform {
                     clear.invoke(filesWrapper, new Object[0])
                     Log.v("implementation filesWrapper size:" + size.invoke(filesWrapper))
                 }
-                Log.v("implementation allDeps:" + tmp.getFiles().toString())
-
             }
         }
 
@@ -459,11 +444,11 @@ abstract class StringGuardTransform extends Transform {
         if (mMappingPrinter != null) {
             mMappingPrinter.endMappingOutput()
         }
-        int len = files.length
-        for (int i = len - 1; i >= 0; i--) {
-            File file = files[i]
-            file.delete()
-        }
+//        int len = files.length
+//        for (int i = len - 1; i >= 0; i--) {
+//            File file = files[i]
+//            file.delete()
+//        }
         Log.v("transform files:" + Arrays.toString(files))
     }
 
