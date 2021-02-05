@@ -35,41 +35,40 @@ class StringGuardPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         project.extensions.create(PLUGIN_NAME, StringGuardExtension)
-
-        project.configurations {
-            stringguarded
-        }
-
-        project.dependencies {
-            compileOnly project.configurations.stringguarded
-        }
-
         def android = project.extensions.android
-        Log.v("StringGuardPlugin apply project:" + project + " class:" + project.getClass().toString())
-        Log.v("StringGuardPlugin apply extensions:" + project.extensions)
-        Log.v("StringGuardPlugin apply android:" + android)
-        project.configurations.implementation.setCanBeResolved(true)
-        project.configurations.each {
-            Log.v("StringGuardPlugin apply configurations:" + it.name)
+
+        Log.v("StringGuardPlugin:" + project)
+        project.subprojects { pro->
+            Log.v("StringGuardPlugin subproject:" + pro)
         }
 
-        if (!project.stringguard.enable) {
-            return
-        }
         if (android instanceof AppExtension) {
             applyApplication(project, android)
-        }
-        if (android instanceof LibraryExtension) {
+
+            project.afterEvaluate {
+                Log.setDebug(project.stringguard.debug)
+            }
+        } else if (android instanceof LibraryExtension) {
             applyLibrary(project, android)
-        }
 
-//
-//        project.dependencies {
-//            complieOnly project.configurations.stringguarded
-//        }
+            project.configurations {
+                stringguarded
+            }
 
-        project.afterEvaluate {
-            Log.setDebug(project.stringguard.debug)
+            project.afterEvaluate {
+                StringGuardExtension sgExtension = project.stringguard
+                Log.v("StringGuardPlugin :" + sgExtension)
+                if (sgExtension == null || !sgExtension.enable) {
+                    project.dependencies {
+                        releaseApi project.configurations.stringguarded
+                    }
+                } else {
+                    project.dependencies {
+                        releaseCompileOnly project.configurations.stringguarded
+                    }
+                }
+                Log.setDebug(project.stringguard.debug)
+            }
         }
     }
 
@@ -95,12 +94,6 @@ class StringGuardPlugin implements Plugin<Project> {
 
     void applyLibrary(Project project, def android) {
         android.registerTransform(new StringGuardTransformForLibrary(project, android.libraryVariants))
-        android.getTransformsDependencies().each{ dependencies->
-            Log.v("StringGuardPlugin applyLibrary dependencies:" + dependencies)
-            dependencies.each { obj->
-                Log.v("StringGuardPlugin applyLibrary dependencies->obj:" + obj)
-            }
-        }
     }
 
 }
