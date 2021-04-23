@@ -128,7 +128,7 @@ public final class StringGuardClassInjector {
     private void processClass(InputStream classIn, OutputStream classOut) throws IOException {
         ClassReader cr = new ClassReader(classIn);
         // skip module-info class, fixed #38
-        if ("module-info".equals(cr.getClassName())) {
+        if ("module-info".equals(cr.getClassName())||"package-info".equals(cr.getClassName())) {
             byte[] buffer = new byte[1024];
             int read;
             while ((read = classIn.read(buffer)) >= 0) {
